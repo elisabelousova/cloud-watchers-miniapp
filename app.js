@@ -26,13 +26,22 @@ function parseSavedPosts(value) {
 let savedPosts = parseSavedPosts(localStorage.getItem(savedKey));
 
 const tg = window.Telegram?.WebApp;
+function applyTheme() {
+  const dark = tg?.colorScheme === "dark";
+  document.documentElement.classList.toggle("dark", dark);
+  const bg = dark ? "#0d0d0f" : "#f3f2ef";
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg);
+  if (tg?.isVersionAtLeast?.("6.1")) {
+    tg.setHeaderColor(bg);
+    tg.setBackgroundColor(bg);
+  }
+}
+
 if (tg) {
   tg.ready();
   tg.expand();
-  if (tg.isVersionAtLeast?.("6.1")) {
-    tg.setHeaderColor("#e9eefc");
-    tg.setBackgroundColor("#e9eefc");
-  }
+  applyTheme();
+  tg.onEvent?.("themeChanged", applyTheme);
 }
 
 function sectionById(id) {
@@ -56,7 +65,7 @@ function postCard(post) {
         ${post.image ? `<img src="${post.image}" alt="" />` : `<span>${post.flag}</span>`}
       </div>
       <div class="post-content" role="link" tabindex="0" data-open-post="${post.id}">
-        <div class="post-meta">${post.flag} ${post.country} · ${section.title}</div>
+        <div class="post-meta">${post.image ? `${post.flag} ` : ""}${post.country} · ${section.title}</div>
         <div class="post-title">${post.title}</div>
         <p class="post-description">${post.description}</p>
       </div>
@@ -87,7 +96,6 @@ function renderHome() {
   currentSection = null;
   currentCollection = null;
   app.innerHTML = `
-    <p class="intro-line">Личные маршруты, визовый опыт и находки из поездок.</p>
     <div class="home-heading">По темам</div>
     <section class="section-grid" aria-label="Разделы путеводителя">
       ${data.sections
@@ -214,6 +222,7 @@ function finishRender() {
 }
 
 function updateNavigation(active) {
+  document.body.dataset.view = currentView;
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.classList.toggle("is-active", item.dataset.nav === active);
   });
